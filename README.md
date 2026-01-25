@@ -2,16 +2,16 @@
 
 A lightweight and user-friendly graphical interface for the TrustTunnel VPN client, built with Flutter.
 
-[![Build and Release](https://github.com/xizerlix/TrustTunnelRock/actions/workflows/release.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPO/actions)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/YOUR_USERNAME/YOUR_REPO?color=brightgreen)
-![License](https://img.shields.io/github/license/xizerlix/TrustTunnelRock)
+[![Build and Release](https://github.com/xizerlix/trust_tunnel_rock/actions/workflows/release.yml/badge.svg)](https://github.com/xizerlix/trust_tunnel_rock/actions)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/xizerlix/trust_tunnel_rock?color=brightgreen)
+![License](https://img.shields.io/github/license/xizerlix/trust_tunnel_rock)
 
 ---
 
 ## 📥 Download
 The latest builds for Windows and Linux are always available in the **Releases** section:
 
-👉 **[Download TrustTunnel GUI](https://github.com/xizerlix/TrustTunnelRock/releases/latest)**
+👉 **[Download TrustTunnel GUI](https://github.com/xizerlix/trust_tunnel_rock/releases/latest)**
 
 ---
 
