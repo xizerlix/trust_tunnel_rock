@@ -46,14 +46,12 @@ jobs:
       - name: Build App
         run: flutter build ${{ matrix.artifact_name }} --release
 
-      # Упаковка для Windows
       - name: Pack Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           Compress-Archive -Path build/windows/runner/Release/* -DestinationPath ${{ matrix.release_name }}
 
-      # Упаковка для Linux (используем tar.gz, так как это стандарт)
       - name: Pack Linux
         if: matrix.os == 'ubuntu-latest'
         shell: bash

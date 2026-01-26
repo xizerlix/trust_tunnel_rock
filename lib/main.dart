@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 color: Colors.black26,
                 child: Row(
                   children: [
-                    const Icon(Icons.hub, size: 18, color: Colors.blue),
+                    const Icon(Icons.import_export, size: 18, color: Colors.blue),
                     const SizedBox(width: 8),
                     const Text('TrustTunnel', style: TextStyle(fontWeight: FontWeight.bold)),
                     const Spacer(),

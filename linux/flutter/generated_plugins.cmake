@@ -4,7 +4,6 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   screen_retriever_linux
-  system_tray
   tray_manager
   window_manager
 )
