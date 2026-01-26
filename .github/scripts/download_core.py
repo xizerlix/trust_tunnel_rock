@@ -8,11 +8,18 @@ import zipfile
 
 REPO_API = 'https://api.github.com/repos/TrustTunnel/TrustTunnelClient/releases/latest'
 
-def find_asset(assets, keywords):
-    keys = [k.lower() for k in keywords]
+def find_asset(assets, platform_keyword, arch_candidates):
+    p = platform_keyword.lower()
+    archs = [a.lower() for a in arch_candidates]
     for a in assets:
         name = a.get('name','').lower()
-        if all(k in name for k in keys):
+        # require platform keyword and any matching arch token
+        if p in name and any(arch in name for arch in archs):
+            return a
+    # fallback: try platform only
+    for a in assets:
+        name = a.get('name','').lower()
+        if p in name:
             return a
     return None
 
@@ -48,11 +55,13 @@ def main():
         sys.exit(1)
 
     if platform == 'windows':
-        keywords = ['windows', 'amd64']
+        arch_candidates = ['amd64', 'x86_64', 'x86-64', 'x86', 'win64']
+        platform_keyword = 'windows'
     else:
-        keywords = ['linux', 'amd64']
+        arch_candidates = ['amd64', 'x86_64', 'x86-64', 'x86']
+        platform_keyword = 'linux'
 
-    asset = find_asset(assets, keywords)
+    asset = find_asset(assets, platform_keyword, arch_candidates)
     if not asset:
         print('No matching asset found for', platform)
         print('Available assets:')
@@ -60,6 +69,7 @@ def main():
             print(' -', a.get('name'))
         sys.exit(1)
 
+    print('Selected asset:', asset.get('name'))
     url = asset.get('browser_download_url')
     if not url:
         print('Asset missing browser_download_url')
