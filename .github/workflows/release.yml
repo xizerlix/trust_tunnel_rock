@@ -45,11 +45,57 @@ jobs:
       - name: Build App
         run: flutter build ${{ matrix.artifact_name }} --release
 
+      - name: Copy TrustTunnel Core into Linux bundle
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          echo "Copying assets/core into Linux bundle"
+          mkdir -p build/linux/x64/release/bundle/assets/core
+          if [ -d assets/core ]; then
+            cp -r assets/core/* build/linux/x64/release/bundle/assets/core/
+          else
+            echo "Warning: assets/core not found"
+          fi
+
+      - name: Copy TrustTunnel Core into Windows release folder
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Write-Host "Copying assets/core into Windows release folder"
+          $dest = "build/windows/x64/runner/Release\\assets\\core"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          if (Test-Path -Path "assets/core") {
+            Copy-Item -Path "assets/core\\*" -Destination $dest -Recurse -Force
+          } else {
+            Write-Warning "assets/core not found"
+          }
+      - name: Show Windows build tree (debug)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Write-Host "Listing build/windows/x64/runner/Release"
+          Get-ChildItem -Path build\windows\x64\runner\Release -Recurse -Force | Select-Object FullName,Length | ForEach-Object { Write-Host $_.FullName }
+          Write-Host "Listing assets/core"
+          if (Test-Path -Path assets/core) { Get-ChildItem -Path assets/core -Recurse -Force | ForEach-Object { Write-Host $_.FullName } } else { Write-Warning "assets/core not found" }
+
       - name: Pack Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ${{ matrix.release_name }}
+
+      - name: Show Linux build tree (debug)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          echo "Listing build/linux/x64/release/bundle"
+          find build/linux/x64/release/bundle -maxdepth 4 -type f -print || true
+          echo "Listing assets/core"
+          if [ -d assets/core ]; then
+            find assets/core -type f -print
+          else
+            echo "Warning: assets/core not found"
+          fi
 
       - name: Pack Linux
         if: matrix.os == 'ubuntu-latest'
