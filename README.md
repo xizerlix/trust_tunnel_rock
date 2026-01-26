@@ -1,6 +1,7 @@
 # TrustTunnel GUI 🚀
 
 A lightweight and user-friendly graphical interface for the TrustTunnel VPN client, built with Flutter.
+![Preview](screenshots/app_preview.png)
 
 [![Build and Release](https://github.com/xizerlix/trust_tunnel_rock/actions/workflows/release.yml/badge.svg)](https://github.com/xizerlix/trust_tunnel_rock/actions)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/xizerlix/trust_tunnel_rock?color=brightgreen)
