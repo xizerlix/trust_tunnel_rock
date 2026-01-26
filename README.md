@@ -18,6 +18,9 @@ The latest builds for Windows and Linux are always available in the **Releases**
 ## ✨ Features
 * **Cross-platform:** Native support for Windows and Linux.
 * **Stealth Mode:** The TrustTunnel core runs in the background without annoying console windows.
+* **Real-time Logs:** Watch VPN connection status, errors, and warnings in real-time.
+* **Easy Configuration:** Use simple TOML files for VPN server configuration.
+* **System Tray:** Minimize to system tray for unobtrusive operation.
 * **System Tray:** Manage your connection easily via the system tray icon.
 
 
