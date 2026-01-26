@@ -88,10 +88,20 @@ def main():
             with zipfile.ZipFile(out_file, 'r') as z:
                 z.extractall('assets/core')
             print('Unzipped to assets/core')
+            try:
+                os.remove(out_file)
+                print('Removed archive', out_file)
+            except Exception:
+                pass
         elif tarfile.is_tarfile(out_file):
             with tarfile.open(out_file, 'r:*') as t:
                 t.extractall('assets/core')
             print('Untarred to assets/core')
+            try:
+                os.remove(out_file)
+                print('Removed archive', out_file)
+            except Exception:
+                pass
         else:
             # fallback to shutil.unpack_archive which relies on filename extension
             try:

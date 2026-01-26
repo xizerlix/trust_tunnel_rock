@@ -101,8 +101,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          cd build/linux/x64/release/bundle
-          tar -czvf ../../../../${{ matrix.release_name }} .
+          tar -czvf ${{ matrix.release_name }} -C build/linux/x64/release/bundle .
 
       - name: Upload Release
         uses: softprops/action-gh-release@v1
