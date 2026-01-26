@@ -15,11 +15,11 @@ jobs:
           - os: windows-latest
             artifact_name: windows
             release_name: TrustTunnel-Windows.zip
-            core_url: "https://github.com/TrustTunnel/TrustTunnelClient/releases/latest/download/trusttunnel-windows-amd64.zip"
+            core_platform: "windows"
           - os: ubuntu-latest
             artifact_name: linux
             release_name: TrustTunnel-Linux.tar.gz
-            core_url: "https://github.com/TrustTunnel/TrustTunnelClient/releases/latest/download/trusttunnel-linux-amd64.zip"
+            core_platform: "linux"
 
     steps:
       - name: Checkout code
@@ -37,11 +37,8 @@ jobs:
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
 
       - name: Download TrustTunnel Core
-        shell: bash
         run: |
-          mkdir -p assets/core
-          curl -L ${{ matrix.core_url }} -o core.zip
-          unzip core.zip -d assets/core/
+          python .github/scripts/download_core.py ${{ matrix.core_platform }}
 
       - name: Build App
         run: flutter build ${{ matrix.artifact_name }} --release
