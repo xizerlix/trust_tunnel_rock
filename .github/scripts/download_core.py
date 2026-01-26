@@ -5,6 +5,7 @@ import json
 import urllib.request
 import shutil
 import zipfile
+import tarfile
 
 REPO_API = 'https://api.github.com/repos/TrustTunnel/TrustTunnelClient/releases/latest'
 
@@ -76,25 +77,37 @@ def main():
         sys.exit(1)
 
     os.makedirs('assets/core', exist_ok=True)
-    out_file = 'core_asset'
+    # Preserve original filename so shutil.unpack_archive can detect format
+    filename = os.path.basename(url)
+    out_file = os.path.join('assets/core', filename)
     download_url(url, out_file)
 
-    # Try to unpack
+    # Try to unpack into assets/core
     try:
         if zipfile.is_zipfile(out_file):
             with zipfile.ZipFile(out_file, 'r') as z:
                 z.extractall('assets/core')
             print('Unzipped to assets/core')
+        elif tarfile.is_tarfile(out_file):
+            with tarfile.open(out_file, 'r:*') as t:
+                t.extractall('assets/core')
+            print('Untarred to assets/core')
         else:
-            # fallback to shutil.unpack_archive for tar.gz etc.
+            # fallback to shutil.unpack_archive which relies on filename extension
             try:
                 shutil.unpack_archive(out_file, 'assets/core')
                 print('Unpacked to assets/core')
             except Exception as e:
                 print('Could not unpack archive:', e)
                 print('Saved raw asset to', out_file)
-    finally:
-        pass
+
+    except Exception as e:
+        print('Error while unpacking:', e)
+
+    # Log extracted files
+    for root, dirs, files in os.walk('assets/core'):
+        for f in files:
+            print('EXTRACTED:', os.path.join(root, f))
 
 if __name__ == '__main__':
     main()
