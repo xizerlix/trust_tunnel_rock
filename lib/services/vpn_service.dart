@@ -41,36 +41,42 @@ class VpnService {
       onLog("[System] VPN client process started with PID: ${process.pid}");
 
       // Listen to stdout
-      process.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((String line) {
-        if (line.isNotEmpty) {
-          final trimmedLine = line.trim();
-          onLog(trimmedLine);
-          
-          // Update VPN status via AppController
-          try {
-            final controller = Get.find<AppController>();
-            controller.updateVpnStatus(trimmedLine);
-          } catch (e) {
-            // Controller not available yet
-          }
-        }
-      });
+      process.stdout
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen((String line) {
+            if (line.isNotEmpty) {
+              final trimmedLine = line.trim();
+              onLog(trimmedLine);
+
+              // Update VPN status via AppController
+              try {
+                final controller = Get.find<AppController>();
+                controller.updateVpnStatus(trimmedLine);
+              } catch (e) {
+                // Controller not available yet
+              }
+            }
+          });
 
       // Listen to stderr
-      process.stderr.transform(utf8.decoder).transform(const LineSplitter()).listen((String line) {
-        if (line.isNotEmpty) {
-          final trimmedLine = line.trim();
-          onLog("[STDERR] $trimmedLine");
-          
-          // Also update VPN status from stderr!
-          try {
-            final controller = Get.find<AppController>();
-            controller.updateVpnStatus(trimmedLine);
-          } catch (e) {
-            // Controller not available yet
-          }
-        }
-      });
+      process.stderr
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen((String line) {
+            if (line.isNotEmpty) {
+              final trimmedLine = line.trim();
+              onLog("[STDERR] $trimmedLine");
+
+              // Also update VPN status from stderr!
+              try {
+                final controller = Get.find<AppController>();
+                controller.updateVpnStatus(trimmedLine);
+              } catch (e) {
+                // Controller not available yet
+              }
+            }
+          });
 
       // Handle process exit
       process.exitCode.then((code) {

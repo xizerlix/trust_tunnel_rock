@@ -11,7 +11,8 @@ class AppController extends GetxController {
   var logs = <String>["[System] App started"].obs;
   var vpnMode = 'general'.obs;
   var exclusions = <String>[].obs;
-  var vpnConnectionReady = false.obs;  // true when "vpn_listen: [0] Done" received
+  var vpnConnectionReady =
+      false.obs; // true when "vpn_listen: [0] Done" received
 
   @override
   void onInit() {
@@ -25,7 +26,7 @@ class AppController extends GetxController {
       _addLog("[System] Checking for existing trusttunnel processes...");
       final result = await Process.run('tasklist', []);
       final output = result.stdout.toString();
-      
+
       if (output.contains('trusttunnel_client.exe')) {
         _addLog("[System] Found existing trusttunnel process, killing it...");
         await Process.run('taskkill', ['/IM', 'trusttunnel_client.exe', '/F']);
@@ -62,7 +63,7 @@ class AppController extends GetxController {
       _addLog("Disconnecting from ${servers[index].name}...");
     } else {
       connectedServerIndex.value = index;
-      vpnConnectionReady.value = false;  // reset until we get "Done" message
+      vpnConnectionReady.value = false; // reset until we get "Done" message
       loadServerRouting(index);
       _addLog("Connecting to ${servers[index].name}...");
       // Kill any existing trusttunnel process before starting new one
@@ -174,15 +175,15 @@ class AppController extends GetxController {
       _addLog("[System] ✓ VPN connection is ready!");
       return; // Early return to avoid overriding with other checks
     }
-    
+
     // Check if connection is lost (waiting for recovery)
-    if (message.contains('VPN_SS_WAITING_RECOVERY') || 
+    if (message.contains('VPN_SS_WAITING_RECOVERY') ||
         message.contains('VPN_SS_RECOVERING')) {
       vpnConnectionReady.value = false;
       _addLog("[System] ⚠ Connection unstable, attempting recovery...");
       return;
     }
-    
+
     // Check for hard connection loss
     if (message.contains('Failed to connect to endpoint')) {
       vpnConnectionReady.value = false;

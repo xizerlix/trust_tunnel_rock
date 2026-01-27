@@ -6,6 +6,7 @@ import urllib.request
 import shutil
 import zipfile
 import tarfile
+import hashlib
 
 REPO_API = 'https://api.github.com/repos/TrustTunnel/TrustTunnelClient/releases/latest'
 
@@ -14,15 +15,34 @@ def find_asset(assets, platform_keyword, arch_candidates):
     archs = [a.lower() for a in arch_candidates]
     for a in assets:
         name = a.get('name','').lower()
-        # require platform keyword and any matching arch token
         if p in name and any(arch in name for arch in archs):
             return a
-    # fallback: try platform only
     for a in assets:
         name = a.get('name','').lower()
         if p in name:
             return a
     return None
+
+def verify_checksum(file_path, checksum_url):
+    print(f'Verifying checksum using {checksum_url}...')
+    req = urllib.request.Request(checksum_url, headers={'User-Agent': 'github-actions-script'})
+    with urllib.request.urlopen(req) as r:
+        remote_checksum_data = r.read().decode('utf-8').strip().split()
+        # Обычно формат: "<hash> <filename>" или просто "<hash>"
+        expected_hash = remote_checksum_data[0]
+
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    
+    actual_hash = sha256_hash.hexdigest()
+    if actual_hash.lower() == expected_hash.lower():
+        print('Checksum verified successfully.')
+        return True
+    else:
+        print(f'Checksum mismatch! Expected: {expected_hash}, Actual: {actual_hash}')
+        return False
 
 def download_url(url, out_path):
     print('Downloading', url)
@@ -33,7 +53,6 @@ def download_url(url, out_path):
 def main():
     if len(sys.argv) < 2:
         print('Usage: download_core.py <platform>')
-        print('platform: windows|linux')
         sys.exit(2)
 
     platform = sys.argv[1].lower()
@@ -46,78 +65,84 @@ def main():
     token = os.environ.get('GITHUB_TOKEN')
     if token:
         headers['Authorization'] = f'token {token}'
+    
     req = urllib.request.Request(REPO_API, headers=headers)
     with urllib.request.urlopen(req) as r:
         data = json.load(r)
 
     assets = data.get('assets', [])
     if not assets:
-        print('No assets found in latest release')
+        print('No assets found')
         sys.exit(1)
 
     if platform == 'windows':
-        arch_candidates = ['amd64', 'x86_64', 'x86-64', 'x86', 'win64']
+        arch_candidates = ['amd64', 'x86_64', 'win64']
         platform_keyword = 'windows'
     else:
-        arch_candidates = ['amd64', 'x86_64', 'x86-64', 'x86']
+        arch_candidates = ['amd64', 'x86_64', 'linux']
         platform_keyword = 'linux'
 
     asset = find_asset(assets, platform_keyword, arch_candidates)
     if not asset:
-        print('No matching asset found for', platform)
-        print('Available assets:')
-        for a in assets:
-            print(' -', a.get('name'))
+        print(f'No matching asset for {platform}')
         sys.exit(1)
 
-    print('Selected asset:', asset.get('name'))
-    url = asset.get('browser_download_url')
-    if not url:
-        print('Asset missing browser_download_url')
-        sys.exit(1)
+    # Поиск файла контрольной суммы (ищем файл с таким же именем + .sha256 или просто .sha256/.checksum)
+    checksum_asset = None
+    for a in assets:
+        if a['name'].startswith(asset['name']) and (a['name'].endswith('.sha256') or a['name'].endswith('.checksum')):
+            checksum_asset = a
+            break
 
     os.makedirs('assets/core', exist_ok=True)
-    # Preserve original filename so shutil.unpack_archive can detect format
-    filename = os.path.basename(url)
-    out_file = os.path.join('assets/core', filename)
-    download_url(url, out_file)
+    out_file = os.path.join('assets/core', asset['name'])
+    download_url(asset['browser_download_url'], out_file)
 
-    # Try to unpack into assets/core
+    # Валидация
+    if checksum_asset:
+        if not verify_checksum(out_file, checksum_asset['browser_download_url']):
+            sys.exit(1)
+    else:
+        print('Warning: No checksum asset found, skipping verification.')
+
+    # Распаковка
+    extract_path = 'assets/core'
     try:
         if zipfile.is_zipfile(out_file):
             with zipfile.ZipFile(out_file, 'r') as z:
-                z.extractall('assets/core')
-            print('Unzipped to assets/core')
-            try:
-                os.remove(out_file)
-                print('Removed archive', out_file)
-            except Exception:
-                pass
+                z.extractall(extract_path)
         elif tarfile.is_tarfile(out_file):
             with tarfile.open(out_file, 'r:*') as t:
-                t.extractall('assets/core')
-            print('Untarred to assets/core')
-            try:
-                os.remove(out_file)
-                print('Removed archive', out_file)
-            except Exception:
-                pass
+                t.extractall(extract_path)
         else:
-            # fallback to shutil.unpack_archive which relies on filename extension
-            try:
-                shutil.unpack_archive(out_file, 'assets/core')
-                print('Unpacked to assets/core')
-            except Exception as e:
-                print('Could not unpack archive:', e)
-                print('Saved raw asset to', out_file)
+            shutil.unpack_archive(out_file, extract_path)
+        
+        os.remove(out_file)
+
+        # 1. Сплющивание структуры (если всё было в одной папке)
+        content = [n for n in os.listdir(extract_path) if not n.startswith('.')]
+        if len(content) == 1:
+            inner_path = os.path.join(extract_path, content[0])
+            if os.path.isdir(inner_path):
+                print(f"Flattening directory: {content[0]}")
+                for item in os.listdir(inner_path):
+                    shutil.move(os.path.join(inner_path, item), extract_path)
+                os.rmdir(inner_path)
+
+        # 2. Права на выполнение для Linux
+        if platform == 'linux':
+            for root, _, files in os.walk(extract_path):
+                for f in files:
+                    f_path = os.path.join(root, f)
+                    os.chmod(f_path, os.stat(f_path).st_mode | 0o111)
 
     except Exception as e:
-        print('Error while unpacking:', e)
+        print(f'Error processing archive: {e}')
+        sys.exit(1)
 
-    # Log extracted files
-    for root, dirs, files in os.walk('assets/core'):
+    for root, _, files in os.walk(extract_path):
         for f in files:
-            print('EXTRACTED:', os.path.join(root, f))
+            print('READY:', os.path.join(root, f))
 
 if __name__ == '__main__':
     main()
