@@ -13,10 +13,15 @@ class VpnService {
   ) async {
     try {
       final currentDir = Directory.current;
+      final String exeName = Platform.isWindows
+          ? 'trusttunnel_client.exe'
+          : 'trusttunnel_client';
+      final String separator = Platform.pathSeparator;
+
       final exePath =
-          '${currentDir.path}\\assets\\core\\trusttunnel_client.exe';
+          '${currentDir.path}${separator}assets${separator}core${separator}$exeName';
       final configPath =
-          '${currentDir.path}\\assets\\core\\trusttunnel_client.toml';
+          '${currentDir.path}${separator}assets${separator}core${separator}trusttunnel_client.toml';
 
       onLog("[System] Starting VPN client...");
       onLog("[System] Exe path: $exePath");

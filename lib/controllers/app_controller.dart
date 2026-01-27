@@ -24,16 +24,32 @@ class AppController extends GetxController {
   Future<void> _killExistingVpnProcess() async {
     try {
       _addLog("[System] Checking for existing trusttunnel processes...");
-      final result = await Process.run('tasklist', []);
-      final output = result.stdout.toString();
 
-      if (output.contains('trusttunnel_client.exe')) {
-        _addLog("[System] Found existing trusttunnel process, killing it...");
-        await Process.run('taskkill', ['/IM', 'trusttunnel_client.exe', '/F']);
+      bool isFound = false;
+      String processName = Platform.isWindows
+          ? 'trusttunnel_client.exe'
+          : 'trusttunnel_client';
+
+      if (Platform.isWindows) {
+        final result = await Process.run('tasklist', []);
+        if (result.stdout.toString().contains(processName)) {
+          isFound = true;
+          await Process.run('taskkill', ['/IM', processName, '/F']);
+        }
+      } else if (Platform.isLinux) {
+        final result = await Process.run('pgrep', ['-f', processName]);
+        if (result.exitCode == 0) {
+          isFound = true;
+          await Process.run('pkill', ['-9', '-f', processName]);
+        }
+      }
+
+      if (isFound) {
+        _addLog("[System] Found existing $processName, killing it...");
         _addLog("[System] ✓ Existing process killed");
         await Future.delayed(const Duration(seconds: 1));
       } else {
-        _addLog("[System] No existing trusttunnel process found");
+        _addLog("[System] No existing process found");
       }
     } catch (e) {
       _addLog("[System] Error checking for existing process: $e");
