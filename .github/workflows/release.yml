@@ -16,16 +16,26 @@ jobs:
         include:
           - os: windows-latest
             artifact_name: windows
-            release_name: TrustTunnel-Windows.zip
             core_platform: "windows"
+            arch: "x64"
+            suffix: ".zip"
+            base_name: "TrustTunnelRock-Windows"
           - os: ubuntu-latest
             artifact_name: linux
-            release_name: TrustTunnel-Linux.tar.gz
             core_platform: "linux"
+            arch: "x64"
+            suffix: ".tar.gz"
+            base_name: "TrustTunnelRock-Linux"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      
+      - name: Set Release Name
+        shell: bash
+        run: |
+          echo "FINAL_RELEASE_NAME=${{ matrix.base_name }}-${{ matrix.arch }}-${{ github.ref_name }}${{ matrix.suffix }}" >> $GITHUB_ENV
 
       - name: Install Flutter
         uses: subosito/flutter-action@v2
@@ -36,7 +46,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-                    sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libayatana-appindicator3-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libayatana-appindicator3-dev
 
       - name: Download TrustTunnel Core
         run: |
@@ -49,63 +59,36 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          echo "Copying assets/core into Linux bundle"
           mkdir -p build/linux/x64/release/bundle/assets/core
           if [ -d assets/core ]; then
             cp -r assets/core/* build/linux/x64/release/bundle/assets/core/
-          else
-            echo "Warning: assets/core not found"
           fi
 
       - name: Copy TrustTunnel Core into Windows release folder
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Write-Host "Copying assets/core into Windows release folder"
-          $dest = "build/windows/x64/runner/Release\\assets\\core"
+          $dest = "build/windows/x64/runner/Release\assets\core"
           New-Item -ItemType Directory -Force -Path $dest | Out-Null
           if (Test-Path -Path "assets/core") {
-            Copy-Item -Path "assets/core\\*" -Destination $dest -Recurse -Force
-          } else {
-            Write-Warning "assets/core not found"
+            Copy-Item -Path "assets/core\*" -Destination $dest -Recurse -Force
           }
-      - name: Show Windows build tree (debug)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          Write-Host "Listing build/windows/x64/runner/Release"
-          Get-ChildItem -Path build\windows\x64\runner\Release -Recurse -Force | Select-Object FullName,Length | ForEach-Object { Write-Host $_.FullName }
-          Write-Host "Listing assets/core"
-          if (Test-Path -Path assets/core) { Get-ChildItem -Path assets/core -Recurse -Force | ForEach-Object { Write-Host $_.FullName } } else { Write-Warning "assets/core not found" }
 
       - name: Pack Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ${{ matrix.release_name }}
-
-      - name: Show Linux build tree (debug)
-        if: matrix.os == 'ubuntu-latest'
-        shell: bash
-        run: |
-          echo "Listing build/linux/x64/release/bundle"
-          find build/linux/x64/release/bundle -maxdepth 4 -type f -print || true
-          echo "Listing assets/core"
-          if [ -d assets/core ]; then
-            find assets/core -type f -print
-          else
-            echo "Warning: assets/core not found"
-          fi
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ${{ env.FINAL_RELEASE_NAME }}
 
       - name: Pack Linux
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          tar -czvf ${{ matrix.release_name }} -C build/linux/x64/release/bundle .
+          tar -czvf ${{ env.FINAL_RELEASE_NAME }} -C build/linux/x64/release/bundle .
 
       - name: Upload Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ matrix.release_name }}
+          files: ${{ env.FINAL_RELEASE_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
