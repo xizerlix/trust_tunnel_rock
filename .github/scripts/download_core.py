@@ -28,7 +28,6 @@ def verify_checksum(file_path, checksum_url):
     req = urllib.request.Request(checksum_url, headers={'User-Agent': 'github-actions-script'})
     with urllib.request.urlopen(req) as r:
         remote_checksum_data = r.read().decode('utf-8').strip().split()
-        # Обычно формат: "<hash> <filename>" или просто "<hash>"
         expected_hash = remote_checksum_data[0]
 
     sha256_hash = hashlib.sha256()
@@ -76,10 +75,10 @@ def main():
         sys.exit(1)
 
     if platform == 'windows':
-        arch_candidates = ['amd64', 'x86_64', 'win64']
+        arch_candidates = ['x86_64','amd64', 'win64']
         platform_keyword = 'windows'
     else:
-        arch_candidates = ['amd64', 'x86_64', 'linux']
+        arch_candidates = [ 'x86_64','amd64']
         platform_keyword = 'linux'
 
     asset = find_asset(assets, platform_keyword, arch_candidates)
@@ -87,7 +86,7 @@ def main():
         print(f'No matching asset for {platform}')
         sys.exit(1)
 
-    # Поиск файла контрольной суммы (ищем файл с таким же именем + .sha256 или просто .sha256/.checksum)
+   
     checksum_asset = None
     for a in assets:
         if a['name'].startswith(asset['name']) and (a['name'].endswith('.sha256') or a['name'].endswith('.checksum')):
@@ -98,14 +97,14 @@ def main():
     out_file = os.path.join('assets/core', asset['name'])
     download_url(asset['browser_download_url'], out_file)
 
-    # Валидация
+
     if checksum_asset:
         if not verify_checksum(out_file, checksum_asset['browser_download_url']):
             sys.exit(1)
     else:
         print('Warning: No checksum asset found, skipping verification.')
 
-    # Распаковка
+
     extract_path = 'assets/core'
     try:
         if zipfile.is_zipfile(out_file):
@@ -119,7 +118,7 @@ def main():
         
         os.remove(out_file)
 
-        # 1. Сплющивание структуры (если всё было в одной папке)
+
         content = [n for n in os.listdir(extract_path) if not n.startswith('.')]
         if len(content) == 1:
             inner_path = os.path.join(extract_path, content[0])
@@ -129,7 +128,7 @@ def main():
                     shutil.move(os.path.join(inner_path, item), extract_path)
                 os.rmdir(inner_path)
 
-        # 2. Права на выполнение для Linux
+
         if platform == 'linux':
             for root, _, files in os.walk(extract_path):
                 for f in files:
