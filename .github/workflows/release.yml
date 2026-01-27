@@ -31,7 +31,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      
       - name: Set Release Name
         shell: bash
         run: |
@@ -55,23 +54,25 @@ jobs:
       - name: Build App
         run: flutter build ${{ matrix.artifact_name }} --release
 
-      - name: Copy TrustTunnel Core into Linux bundle
+      - name: Copy Assets into Linux bundle
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          mkdir -p build/linux/x64/release/bundle/assets/core
-          if [ -d assets/core ]; then
-            cp -r assets/core/* build/linux/x64/release/bundle/assets/core/
+          mkdir -p build/linux/x64/release/bundle/assets
+          if [ -d assets ]; then
+            cp -r assets/* build/linux/x64/release/bundle/assets/
           fi
 
-      - name: Copy TrustTunnel Core into Windows release folder
+      - name: Copy Assets into Windows release folder
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $dest = "build/windows/x64/runner/Release\assets\core"
-          New-Item -ItemType Directory -Force -Path $dest | Out-Null
-          if (Test-Path -Path "assets/core") {
-            Copy-Item -Path "assets/core\*" -Destination $dest -Recurse -Force
+          $dest = "build\windows\x64\runner\Release\assets"
+          if (!(Test-Path -Path $dest)) {
+            New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          }
+          if (Test-Path -Path "assets") {
+            Copy-Item -Path "assets\*" -Destination $dest -Recurse -Force
           }
 
       - name: Pack Windows
