@@ -185,7 +185,8 @@ class AppController extends GetxController {
 
   void updateVpnStatus(String message) {
     // Check if VPN is fully ready and listening - THIS IS THE SUCCESS SIGNAL
-    if (message.contains('vpn_listen: [0] Done')) {
+    if (message.contains('vpn_listen: [0] Done') ||
+        message.contains('Successfully connected to endpoint')) {
       print('DEBUG: Found vpn_listen Done signal: $message');
       vpnConnectionReady.value = true;
       _addLog("[System] ✓ VPN connection is ready!");
