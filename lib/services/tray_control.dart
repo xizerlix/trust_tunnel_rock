@@ -29,8 +29,8 @@ class TrayControl extends TrayListener {
           MenuItem(
             key: 'exit',
             label: 'Exit',
-            onClick: (_) {
-              AppController().publicKillProcess();
+            onClick: (_) async {
+              await AppController().publicKillProcess();
               windowManager.close();
             },
           ),

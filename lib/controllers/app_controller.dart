@@ -21,7 +21,7 @@ class AppController extends GetxController {
     _loadServer();
   }
 
-  void publicKillProcess() => _killExistingVpnProcess();
+  Future<void> publicKillProcess() => _killExistingVpnProcess();
 
   Future<void> _killExistingVpnProcess() async {
     try {
