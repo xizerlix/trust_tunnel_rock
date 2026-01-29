@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:get/get.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
@@ -76,7 +77,12 @@ void main() async {
   });
 
   await TrayControl.instance.init();
-  runApp(const MainApp());
+  if (await FlutterSingleInstance().isFirstInstance()) {
+    runApp(const MainApp());
+  } else {
+    //await FlutterSingleInstance().focus();
+    await windowManager.focus();
+  }
 }
 
 class MainApp extends StatelessWidget {
