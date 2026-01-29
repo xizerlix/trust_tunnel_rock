@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:trust_tunnel_rock/controllers/app_controller.dart';
 import 'package:window_manager/window_manager.dart';
 
 class TrayControl extends TrayListener {
@@ -28,7 +29,10 @@ class TrayControl extends TrayListener {
           MenuItem(
             key: 'exit',
             label: 'Exit',
-            onClick: (_) => windowManager.close(),
+            onClick: (_) {
+              AppController().publicKillProcess();
+              windowManager.close();
+            },
           ),
         ],
       ),

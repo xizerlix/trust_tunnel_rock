@@ -21,6 +21,8 @@ class AppController extends GetxController {
     _loadServer();
   }
 
+  void publicKillProcess() => _killExistingVpnProcess();
+
   Future<void> _killExistingVpnProcess() async {
     try {
       _addLog("[System] Checking for existing trusttunnel processes...");
