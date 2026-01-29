@@ -80,8 +80,10 @@ void main() async {
   if (await FlutterSingleInstance().isFirstInstance()) {
     runApp(const MainApp());
   } else {
+    await windowManager.show();
     //await FlutterSingleInstance().focus();
-    await windowManager.focus();
+    //await windowManager.focus();
+    exit(0);
   }
 }
 
