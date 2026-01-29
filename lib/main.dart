@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:get/get.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
@@ -11,7 +10,28 @@ import 'services/tray_control.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+  const int instancePort = 13666;
+  try {
+    final server = await RawServerSocket.bind(
+      InternetAddress.loopbackIPv4,
+      instancePort,
+    );
+    server.listen((socket) async {
+      await _wakeupWindow();
+      socket.close();
+    });
+  } catch (e) {
+    try {
+      final socket = await Socket.connect(
+        InternetAddress.loopbackIPv4,
+        instancePort,
+      );
+      await socket.close();
+    } catch (_) {}
 
+    print("Instance already running. Exiting...");
+    exit(0);
+  }
   // Debug: Print current directory and search for config file
   print('====== DEBUG INFO ======');
   print('Current directory: ${Directory.current.path}');
@@ -77,14 +97,14 @@ void main() async {
   });
 
   await TrayControl.instance.init();
-  if (await FlutterSingleInstance().isFirstInstance()) {
-    runApp(const MainApp());
-  } else {
-    await windowManager.show();
-    //await FlutterSingleInstance().focus();
-    //await windowManager.focus();
-    exit(0);
-  }
+
+  runApp(const MainApp());
+}
+
+Future<void> _wakeupWindow() async {
+  if (await windowManager.isMinimized()) await windowManager.restore();
+  await windowManager.show();
+  await windowManager.focus();
 }
 
 class MainApp extends StatelessWidget {
